@@ -83,6 +83,8 @@ public:
   antlrcpp::Any visitUnaryArithmetic(AslParser::UnaryArithmeticContext *ctx);
   antlrcpp::Any visitUnaryLogical(AslParser::UnaryLogicalContext *ctx);
   antlrcpp::Any visitParenthesis(AslParser::ParenthesisContext *ctx);
+  antlrcpp::Any visitWhileStmt(AslParser::WhileStmtContext *ctx);
+  antlrcpp::Any visitReturnStmt(AslParser::ReturnStmtContext *ctx);
 
 private:
 

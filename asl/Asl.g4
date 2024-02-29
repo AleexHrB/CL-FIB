@@ -61,10 +61,11 @@ statements
 
 // The different types of instructions
 statement
-          // Assignment
         : left_expr ASSIGN expr ';'           # assignStmt
+        | RETURN expr? ';'                    # returnStmt
+        | WHILE expr DO statements ENDWHILE # whileStmt
           // if-then-else statement (else is optional)
-        | IF expr THEN statements ENDIF       # ifStmt
+        | IF expr THEN statements (ELSE statements)? ENDIF       # ifStmt
           // A function/procedure call has a list of arguments in parenthesis (possibly empty)
         | ident '(' ')' ';'                   # procCall
           // Read a variable
@@ -125,6 +126,9 @@ BOOL      : 'bool';
 AND       : 'and';
 NOT       : 'not' ;  
 OR        : 'or';
+RETURN    : 'return';
+WHILE     : 'while';
+ENDWHILE  : 'endwhile';
 IF        : 'if' ;
 THEN      : 'then' ;
 ELSE      : 'else' ;
@@ -133,11 +137,13 @@ FUNC      : 'func' ;
 ENDFUNC   : 'endfunc' ;
 READ      : 'read' ;
 WRITE     : 'write' ;
+DO        : 'do' ;
 INTVAL    : ('0'..'9')+ ;
 FLOATVAL  : INTVAL '.' INTVAL ;
 BOOLVAL   : ('true' | 'false') ;  
 CHARVAL   : '\'' ('a'..'z'|'A'..'Z') '\'';  
 ID        : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
+
 
 // Strings (in quotes) with escape sequences
 STRING    : '"' ( ESC_SEQ | ~('\\'|'"') )* '"' ;
