@@ -81,15 +81,16 @@ left_expr
         ;
 
 // Grammar for expressions with boolean, relational and aritmetic operators
-expr    : expr op=(MUL|DIV) expr                    # arithmetic
-        | expr op=(PLUS|MINUS) expr                   # arithmetic
-        | expr op=(EQUAL|NEQ|GT|LT|GE|LE) expr                  # relational
-        | expr op=AND expr                   # logical 
-        | expr op=OR expr                   # logical
-        | INTVAL                              # value
-        | FLOATVAL                            # value
-        | BOOLVAL                             # value
-        | ident                               # exprIdent
+expr    : LPAR expr RPAR                           # arithmetic
+        |  expr op=(MUL|DIV) expr                  # arithmetic
+        | expr op=(PLUS|MINUS) expr                # arithmetic
+        | expr op=(EQUAL|NEQ|GT|LT|GE|LE) expr     # relational
+        | expr op=AND expr                         # logical 
+        | expr op=OR expr                          # logical
+        | INTVAL                                   # value
+        | FLOATVAL                                 # value
+        | BOOLVAL                                  # value
+        | ident                                    # exprIdent
         ;
 
 // Identifiers
@@ -111,6 +112,8 @@ PLUS      : '+' ;
 MINUS     : '-' ;
 MUL       : '*';
 DIV       : '/';
+LPAR      : '(' ;  
+RPAR      : ')' ;  
 VAR       : 'var';
 INT       : 'int';
 FLOAT     : 'float';
