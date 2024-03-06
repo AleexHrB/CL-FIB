@@ -38,8 +38,11 @@ program : function+ EOF
 
 // A function has a name, a list of parameters and a list of statements
 function
-        : FUNC ID '(' ')' declarations statements ENDFUNC
+        : FUNC ID '(' parameters ? ')' (':' type)? declarations statements ENDFUNC
         ;
+
+parameters : (ID ':' type (',' ID ':' type)*)
+           ;
 
 declarations
         : (variable_decl)*
@@ -78,7 +81,8 @@ statement
 
 // Grammar for left expressions (l-values in C++)
 left_expr
-        : ident
+        : ident                 #leftExprIdent
+        | ident ('[' expr ']')  #arrayAccessLExpr
         ;
 
 // Grammar for expressions with boolean, relational and aritmetic operators
@@ -94,6 +98,8 @@ expr    : LPAR expr RPAR                           # parenthesis
         | FLOATVAL                                 # value
         | BOOLVAL                                  # value
         | CHARVAL                                  # value
+        | ident '(' ')'                            # funcExpr
+        | ident ('[' expr ']')                     # arrayAccessExpr
         | ident                                    # exprIdent
         ;
 
