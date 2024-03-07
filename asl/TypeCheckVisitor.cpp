@@ -406,6 +406,11 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     else if (Types.isFunctionTy(t)) {
         TypesMgr::TypeId tRet = Types.getFuncReturnType(t);
 
+        if (Types.isVoidFunction(t)) {
+            Errors.isNotFunction(ctx -> ident());
+            tRet = Types.createErrorTy();
+        }
+
         if (ctx -> parametersCall()) {
             std::vector<TypesMgr::TypeId> lParamsTy = visit(ctx -> parametersCall()).as<std::vector<TypesMgr::TypeId>>();
             const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t);
