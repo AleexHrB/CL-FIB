@@ -395,6 +395,51 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprC
     return 0;
 }
 
+antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
+    DEBUG_ENTER();
+
+    visit(ctx -> ident());
+
+    TypesMgr::TypeId t = getTypeDecor(ctx -> ident());
+    if (not Types.isErrorTy(t) and not Types.isFunctionTy(t))
+        Errors.isNotCallable(ctx -> ident());
+    else if (Types.isFunctionTy(t)) {
+        TypesMgr::TypeId tRet = Types.getFuncReturnType(t);
+
+        if (ctx -> parametersCall()) {
+            std::vector<TypesMgr::TypeId> lParamsTy = visit(ctx -> parametersCall()).as<std::vector<TypesMgr::TypeId>>();
+            const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t);
+
+            for (unsigned int i = 0; i < fuctionParams.size(); ++i) {
+                if (not Types.equalTypes(lParamsTy[i], fuctionParams[i])) Errors.incompatibleParameter(ctx -> parametersCall(), i, ctx);
+            }
+        }
+
+        putTypeDecor(ctx, tRet);
+        putIsLValueDecor(ctx, false);
+    }
+
+    //t es un error
+    else {
+        putTypeDecor(ctx, t);
+    }
+
+    DEBUG_EXIT();
+    return 0;
+}
+
+antlrcpp::Any TypeCheckVisitor::visitParametersCall(AslParser::ParametersCallContext *ctx) {
+
+    DEBUG_ENTER();
+    std::vector<TypesMgr::TypeId> lParamsTy((ctx -> expr()).size());
+    for (unsigned int i = 0; i < (ctx -> expr()).size(); ++i) {
+        visit(ctx->expr(i));
+        lParamsTy[i] = getTypeDecor(ctx -> expr(i));
+    }
+    DEBUG_EXIT();
+    return lParamsTy;
+}
+
 // Getters for the necessary tree node atributes:
 //   Scope, Type ans IsLValue
 SymTable::ScopeId TypeCheckVisitor::getScopeDecor(antlr4::ParserRuleContext *ctx) {
