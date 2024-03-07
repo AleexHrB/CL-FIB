@@ -153,9 +153,20 @@ antlrcpp::Any TypeCheckVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
   visit(ctx->ident());
   TypesMgr::TypeId t1 = getTypeDecor(ctx->ident());
   if (Types.isErrorTy(t1)) {
-    ;
   } else if (not Types.isFunctionTy(t1)) {
     Errors.isNotCallable(ctx->ident());
+  }
+  else {
+        if (ctx -> expr(0)) {
+            const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t1);
+            for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
+                visit(ctx->expr(i));
+                TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
+                if (not Types.equalTypes(tParam, fuctionParams[i])) {
+                    Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
+                }
+            }
+        }
   }
   DEBUG_EXIT();
   return 0;
@@ -411,12 +422,12 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
             tRet = Types.createErrorTy();
         }
         
-        if (ctx -> expr()) {
+        if (ctx -> expr(0)) {
             const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t);
             for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
                 visit(ctx->expr(i));
                 TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-                if (Types.equalTypes(tParam, fuctionParams[i])) {
+                if (not Types.equalTypes(tParam, fuctionParams[i])) {
                     Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
                 }
             }

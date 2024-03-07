@@ -88,7 +88,6 @@ public:
   antlrcpp::Any visitArrayAccessLExpr(AslParser::ArrayAccessLExprContext *ctx);
   antlrcpp::Any visitArrayAccessExpr(AslParser::ArrayAccessExprContext *ctx);
   antlrcpp::Any visitFuncExpr(AslParser::FuncExprContext *ctx);
-  antlrcpp::Any visitParametersCall(AslParser::ParametersCallContext *ctx);
 
 private:
 
