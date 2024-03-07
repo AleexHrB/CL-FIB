@@ -406,12 +406,14 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     else if (Types.isFunctionTy(t)) {
         TypesMgr::TypeId tRet = Types.getFuncReturnType(t);
 
-        if (ctx -> parametersCall()) {
-            std::vector<TypesMgr::TypeId> lParamsTy = visit(ctx -> parametersCall()).as<std::vector<TypesMgr::TypeId>>();
+        if (ctx -> expr()) {
             const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t);
-
-            for (unsigned int i = 0; i < fuctionParams.size(); ++i) {
-                if (not Types.equalTypes(lParamsTy[i], fuctionParams[i])) Errors.incompatibleParameter(ctx -> parametersCall(), i, ctx);
+            for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
+                visit(ctx->expr(i));
+                TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
+                if (Types.equalTypes(tParam, fuctionParams[i])) {
+                    Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
+                }
             }
         }
 
@@ -426,18 +428,6 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
 
     DEBUG_EXIT();
     return 0;
-}
-
-antlrcpp::Any TypeCheckVisitor::visitParametersCall(AslParser::ParametersCallContext *ctx) {
-
-    DEBUG_ENTER();
-    std::vector<TypesMgr::TypeId> lParamsTy((ctx -> expr()).size());
-    for (unsigned int i = 0; i < (ctx -> expr()).size(); ++i) {
-        visit(ctx->expr(i));
-        lParamsTy[i] = getTypeDecor(ctx -> expr(i));
-    }
-    DEBUG_EXIT();
-    return lParamsTy;
 }
 
 // Getters for the necessary tree node atributes:

@@ -70,7 +70,7 @@ statement
           // if-then-else statement (else is optional)
         | IF expr THEN statements (ELSE statements)? ENDIF       # ifStmt
           // A function/procedure call has a list of arguments in parenthesis (possibly empty)
-        | ident '(' parametersCall? ')' ';'                   # procCall
+        | ident '(' (expr (',' expr)*)? ')' ';'                   # procCall
           // Read a variable
         | READ left_expr ';'                  # readStmt
           // Write an expression
@@ -85,9 +85,9 @@ left_expr
         | ident '[' expr ']'  #arrayAccessLExpr
         ;
 
-parametersCall
-        : expr (',' expr)* 
-        ;
+// parametersCall
+//         : expr (',' expr)* 
+//         ;
 
 // Grammar for expressions with boolean, relational and aritmetic operators
 expr    : LPAR expr RPAR                           # parenthesis
@@ -102,7 +102,7 @@ expr    : LPAR expr RPAR                           # parenthesis
         | FLOATVAL                                 # value
         | BOOLVAL                                  # value
         | CHARVAL                                  # value
-        | ident '(' parametersCall? ')'        # funcExpr
+        | ident '(' (expr (',' expr)*) ? ')'        # funcExpr
         | ident '[' expr ']'                     # arrayAccessExpr
         | ident                                    # exprIdent
         ;
