@@ -406,6 +406,16 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     else if (Types.isFunctionTy(t)) {
         TypesMgr::TypeId tRet = Types.getFuncReturnType(t);
 
+        if (Types.isVoidFunction(t)) {
+            Errors.isNotFunction(ctx -> ident());
+            tRet = Types.createErrorTy();
+        }
+
+        if (Types.isVoidFunction(t)) {
+            Errors.isNotFunction(ctx -> ident());
+            tRet = Types.createErrorTy();
+        }
+
         if (ctx -> expr()) {
             const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t);
             for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
