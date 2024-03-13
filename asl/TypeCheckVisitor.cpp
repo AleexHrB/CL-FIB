@@ -421,7 +421,7 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprC
     if ((not Types.isErrorTy(t2)) and (not Types.isArrayTy(t2))) 
         Errors.nonArrayInArrayAccess(ctx);
 
-    TypesMgr::TypeId t3 = Types.getArrayElemType(t2);
+    TypesMgr::TypeId t3 = Types.isArrayTy(t2) ? Types.getArrayElemType(t2) : Types.createErrorTy();
     putTypeDecor(ctx, t3);
 
     DEBUG_EXIT();
@@ -432,10 +432,14 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     DEBUG_ENTER();
 
     visit(ctx -> ident());
+    for (unsigned int i = 0; i < ctx->expr().size(); ++i) visit(ctx->expr(i)); 
 
     TypesMgr::TypeId t = getTypeDecor(ctx -> ident());
-    if (not Types.isErrorTy(t) and not Types.isFunctionTy(t))
+    if (not Types.isErrorTy(t) and not Types.isFunctionTy(t)) {
         Errors.isNotCallable(ctx -> ident());
+        putTypeDecor(ctx, Types.createErrorTy());
+    }
+
     else if (Types.isFunctionTy(t)) {
         TypesMgr::TypeId tRet = Types.getFuncReturnType(t);
 
@@ -447,9 +451,8 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
         if (ctx -> expr(0)) {
             const std::vector<TypesMgr::TypeId>& functionParams = Types.getFuncParamsTypes(t);
             for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
-                visit(ctx->expr(i));
                 TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-                if (not Types.equalTypes(tParam, functionParams[i])) {
+                if (not Types.isErrorTy(tParam) and not Types.equalTypes(tParam, functionParams[i])) {
                     Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
                 }
             }
@@ -463,6 +466,7 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     else {
         putTypeDecor(ctx, t);
     }
+    
 
     DEBUG_EXIT();
     return 0;
