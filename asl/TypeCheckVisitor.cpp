@@ -87,6 +87,8 @@ antlrcpp::Any TypeCheckVisitor::visitFunction(AslParser::FunctionContext *ctx) {
   SymTable::ScopeId sc = getScopeDecor(ctx);
   Symbols.pushThisScope(sc);
   // Symbols.print();
+  TypesMgr::TypeId t = Types.getFuncReturnType(Symbols.getGlobalFunctionType(ctx -> ID() -> getText()));
+  setCurrentFunctionTy(t);
   visit(ctx->statements());
   Symbols.popScope();
   DEBUG_EXIT();
@@ -366,7 +368,19 @@ antlrcpp::Any TypeCheckVisitor::visitWhileStmt(AslParser::WhileStmtContext *ctx)
 
 antlrcpp::Any TypeCheckVisitor::visitReturnStmt(AslParser::ReturnStmtContext *ctx) {
     DEBUG_ENTER();
-    if (ctx -> expr()) visit(ctx -> expr()); 
+    TypesMgr::TypeId t = Types.createVoidTy();
+    if (ctx -> expr()) {
+        visit(ctx -> expr()); 
+        t = getTypeDecor(ctx->expr());
+    }
+
+    std::cout << t << std::endl;
+    std::cout << getCurrentFunctionTy() << std::endl;
+
+    if ((not Types.isFloatTy(getCurrentFunctionTy()) and not Types.equalTypes(t, getCurrentFunctionTy())) or ((Types.isFloatTy(getCurrentFunctionTy()) and not Types.isNumericTy(t))) ) {
+        Errors.incompatibleReturn(ctx->RETURN());
+    }
+
     DEBUG_EXIT();
     return 0;
 }
@@ -393,6 +407,7 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprC
     DEBUG_ENTER();
     visit(ctx -> expr());
     TypesMgr::TypeId t1 = getTypeDecor(ctx->expr());
+
     if ((not Types.isErrorTy(t1)) and (not Types.isIntegerTy(t1))) 
         Errors.nonIntegerIndexInArrayAccess(ctx -> expr());
 
@@ -401,6 +416,9 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprC
 
     if ((not Types.isErrorTy(t2)) and (not Types.isArrayTy(t2))) 
         Errors.nonArrayInArrayAccess(ctx);
+
+    TypesMgr::TypeId t3 = Types.getArrayElemType(t2);
+    putTypeDecor(ctx, t3);
 
     DEBUG_EXIT();
     return 0;
@@ -423,11 +441,11 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
         }
         
         if (ctx -> expr(0)) {
-            const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t);
+            const std::vector<TypesMgr::TypeId>& functionParams = Types.getFuncParamsTypes(t);
             for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
                 visit(ctx->expr(i));
                 TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-                if (not Types.equalTypes(tParam, fuctionParams[i])) {
+                if (not Types.equalTypes(tParam, functionParams[i])) {
                     Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
                 }
             }
