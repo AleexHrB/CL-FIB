@@ -87,8 +87,12 @@ antlrcpp::Any TypeCheckVisitor::visitFunction(AslParser::FunctionContext *ctx) {
   SymTable::ScopeId sc = getScopeDecor(ctx);
   Symbols.pushThisScope(sc);
   // Symbols.print();
-  TypesMgr::TypeId t = Types.getFuncReturnType(Symbols.getGlobalFunctionType(ctx -> ID() -> getText()));
-  setCurrentFunctionTy(t);
+  TypesMgr::TypeId tFunc = Types.createVoidTy();
+  if (ctx->type()) {
+    visit(ctx->type());
+    tFunc = getTypeDecor(ctx->type());
+  }
+  setCurrentFunctionTy(tFunc);
   visit(ctx->statements());
   Symbols.popScope();
   DEBUG_EXIT();
@@ -374,8 +378,8 @@ antlrcpp::Any TypeCheckVisitor::visitReturnStmt(AslParser::ReturnStmtContext *ct
         t = getTypeDecor(ctx->expr());
     }
 
-    std::cout << t << std::endl;
-    std::cout << getCurrentFunctionTy() << std::endl;
+    //std::cout << t << std::endl;
+    //std::cout << getCurrentFunctionTy() << std::endl;
 
     if ((not Types.isFloatTy(getCurrentFunctionTy()) and not Types.equalTypes(t, getCurrentFunctionTy())) or ((Types.isFloatTy(getCurrentFunctionTy()) and not Types.isNumericTy(t))) ) {
         Errors.incompatibleReturn(ctx->RETURN());
