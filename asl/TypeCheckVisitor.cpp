@@ -163,16 +163,16 @@ antlrcpp::Any TypeCheckVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
     Errors.isNotCallable(ctx->ident());
   }
   else {
-        if (ctx -> expr(0)) {
-            const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t1);
-            for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
-                visit(ctx->expr(i));
-                TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-                if (not Types.equalTypes(tParam, fuctionParams[i])) {
-                    Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
-                }
-            }
-        }
+      const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t1);
+      if (fuctionParams.size() != ctx -> expr().size()) Errors.numberOfParameters(ctx);
+      //unsigned int min = ctx -> expr().size() < fuctionParams.size() ? ctx -> expr().size() : fuctionParams.size();
+      for (unsigned int i = 0; i < ctx -> expr().size(); ++i) {
+          visit(ctx->expr(i));
+          TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
+          if (i < fuctionParams.size() and not canCastType(tParam, fuctionParams[i])) {
+              Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
+          }
+      }
   }
   DEBUG_EXIT();
   return 0;
@@ -225,15 +225,27 @@ antlrcpp::Any TypeCheckVisitor::visitArithmetic(AslParser::ArithmeticContext *ct
   TypesMgr::TypeId t1 = getTypeDecor(ctx->expr(0));
   visit(ctx->expr(1));
   TypesMgr::TypeId t2 = getTypeDecor(ctx->expr(1));
-  if (((not Types.isErrorTy(t1)) and (not Types.isNumericTy(t1))) or
-      ((not Types.isErrorTy(t2)) and (not Types.isNumericTy(t2))))
-    Errors.incompatibleOperator(ctx->op);
-  TypesMgr::TypeId t;
+    TypesMgr::TypeId t;
+  
+    if (ctx -> MOD()) {
+        if (((not Types.isErrorTy(t1)) and (not Types.isIntegerTy(t1))) or
+                ((not Types.isErrorTy(t2)) and (not Types.isIntegerTy(t2))))
+            Errors.incompatibleOperator(ctx->op);
 
-  if (Types.isFloatTy(t1) or Types.isFloatTy(t2)) t = Types.createFloatTy(); 
-  else t = Types.createIntegerTy();
-  putTypeDecor(ctx, t);
-  putIsLValueDecor(ctx, false);
+        t = Types.createIntegerTy();
+
+    }
+
+    else {
+        if (((not Types.isErrorTy(t1)) and (not Types.isNumericTy(t1))) or
+                ((not Types.isErrorTy(t2)) and (not Types.isNumericTy(t2))))
+            Errors.incompatibleOperator(ctx->op);
+
+        if (Types.isFloatTy(t1) or Types.isFloatTy(t2)) t = Types.createFloatTy(); 
+        else t = Types.createIntegerTy();
+    }
+      putTypeDecor(ctx, t);
+      putIsLValueDecor(ctx, false);
   DEBUG_EXIT();
   return 0;
 }
@@ -432,7 +444,9 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     DEBUG_ENTER();
 
     visit(ctx -> ident());
-    for (unsigned int i = 0; i < ctx->expr().size(); ++i) visit(ctx->expr(i)); 
+    for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
+        visit(ctx->expr(i)); 
+    }
 
     TypesMgr::TypeId t = getTypeDecor(ctx -> ident());
     if (not Types.isErrorTy(t) and not Types.isFunctionTy(t)) {
@@ -448,15 +462,17 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
             tRet = Types.createErrorTy();
         }
         
-        if (ctx -> expr(0)) {
-            const std::vector<TypesMgr::TypeId>& functionParams = Types.getFuncParamsTypes(t);
-            for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
+        const std::vector<TypesMgr::TypeId>& functionParams = Types.getFuncParamsTypes(t);
+
+        if (functionParams.size() != ctx -> expr().size()) Errors.numberOfParameters(ctx);
+        
+            unsigned int min = ctx -> expr().size() < functionParams.size() ? ctx -> expr().size() : functionParams.size();
+            for (unsigned int i = 0; i < min; ++i) {
                 TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-                if (not Types.isErrorTy(tParam) and not Types.equalTypes(tParam, functionParams[i])) {
+                if (not Types.isErrorTy(tParam) and not canCastType(tParam, functionParams[i])) {
                     Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
                 }
             }
-        }
 
         putTypeDecor(ctx, tRet);
         putIsLValueDecor(ctx, false);
@@ -494,4 +510,11 @@ void TypeCheckVisitor::putTypeDecor(antlr4::ParserRuleContext *ctx, TypesMgr::Ty
 }
 void TypeCheckVisitor::putIsLValueDecor(antlr4::ParserRuleContext *ctx, bool b) {
   Decorations.putIsLValue(ctx, b);
+}
+
+
+//Cast t1 en t2
+inline bool TypeCheckVisitor::canCastType(TypesMgr::TypeId t1, TypesMgr::TypeId t2) {
+
+    return (not Types.isFloatTy(t2) and Types.equalTypes(t2, t1)) or ((Types.isFloatTy(t2) and Types.isNumericTy(t1)));
 }

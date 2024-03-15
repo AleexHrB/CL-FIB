@@ -98,7 +98,7 @@ left_expr
 expr    : LPAR expr RPAR                           # parenthesis
         | op=(MINUS|PLUS) expr                     # unaryArithmetic
         | op=NOT expr                              # unaryLogical
-        | expr op=(MUL|DIV) expr                   # arithmetic
+        | expr op=(MUL|DIV|MOD) expr                   # arithmetic
         | expr op=(PLUS|MINUS) expr                # arithmetic
         | expr op=(EQUAL|NEQ|GT|LT|GE|LE) expr     # relational
         | expr op=AND expr                         # logical 
@@ -130,6 +130,7 @@ LT        : '<' ;
 PLUS      : '+' ;
 MINUS     : '-' ;
 MUL       : '*';
+MOD       : '%';
 DIV       : '/';
 LPAR      : '(' ;  
 RPAR      : ')' ;  

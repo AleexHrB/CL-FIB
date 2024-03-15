@@ -1,5 +1,4 @@
 /////////////////////////////////////////////////////////////////
-//
 //    SymTable - Symbol table for the Asl programming language
 //
 //    Copyright (C) 2020-2030  Universitat Politecnica de Catalunya

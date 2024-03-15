@@ -115,4 +115,6 @@ private:
   void putTypeDecor     (antlr4::ParserRuleContext *ctx, TypesMgr::TypeId t);
   void putIsLValueDecor (antlr4::ParserRuleContext *ctx, bool b);
 
+  inline bool canCastType(TypesMgr::TypeId t1, TypesMgr::TypeId t2);
+
 };  // class TypeCheckVisitor
