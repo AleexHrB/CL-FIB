@@ -366,7 +366,12 @@ antlrcpp::Any TypeCheckVisitor::visitParenthesis(AslParser::ParenthesisContext *
     visit(ctx -> expr()); 
     TypesMgr::TypeId t1 = getTypeDecor(ctx->expr());
     putTypeDecor(ctx, t1);
-    putIsLValueDecor(ctx, false);
+
+    // ojo
+    bool b = getIsLValueDecor(ctx->expr());
+    putIsLValueDecor(ctx, b);
+    // putIsLValueDecor(ctx, false);
+
     DEBUG_EXIT();
     return 0;
 }
@@ -404,20 +409,22 @@ antlrcpp::Any TypeCheckVisitor::visitReturnStmt(AslParser::ReturnStmtContext *ct
 antlrcpp::Any TypeCheckVisitor::visitArrayAccessLExpr(AslParser::ArrayAccessLExprContext *ctx) {
     DEBUG_ENTER();
     visit(ctx -> expr());
-    TypesMgr::TypeId t1 = getTypeDecor(ctx->expr());
-    if ((not Types.isErrorTy(t1)) and (not Types.isIntegerTy(t1))) 
+    TypesMgr::TypeId tIndx = getTypeDecor(ctx->expr());
+    if ((not Types.isErrorTy(tIndx)) and (not Types.isIntegerTy(tIndx))) 
         Errors.nonIntegerIndexInArrayAccess(ctx -> expr());
 
     visit(ctx -> ident());
-    TypesMgr::TypeId t2 = getTypeDecor(ctx->ident());
+    TypesMgr::TypeId tArray = getTypeDecor(ctx->ident());
 
-    if ((not Types.isErrorTy(t2)) and (not Types.isArrayTy(t2))) 
+    if ((not Types.isErrorTy(tArray)) and (not Types.isArrayTy(tArray))) 
         Errors.nonArrayInArrayAccess(ctx);
 
+    TypesMgr::TypeId tArrayValue = Types.isArrayTy(tArray) ? Types.getArrayElemType(tArray) : Types.createErrorTy();
+    putTypeDecor(ctx, tArrayValue);
+    putIsLValueDecor(ctx, true);
     DEBUG_EXIT();
     return 0;
 }
-
 
 antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprContext *ctx) {
     DEBUG_ENTER();
@@ -435,6 +442,7 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprC
 
     TypesMgr::TypeId t3 = Types.isArrayTy(t2) ? Types.getArrayElemType(t2) : Types.createErrorTy();
     putTypeDecor(ctx, t3);
+    putIsLValueDecor(ctx, true);
 
     DEBUG_EXIT();
     return 0;
@@ -475,14 +483,12 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
             }
 
         putTypeDecor(ctx, tRet);
-        putIsLValueDecor(ctx, false);
     }
-
     //t es un error
     else {
         putTypeDecor(ctx, t);
     }
-    
+    putIsLValueDecor(ctx, false);
 
     DEBUG_EXIT();
     return 0;
