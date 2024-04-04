@@ -158,7 +158,7 @@ DO        : 'do' ;
 INTVAL    : ('0'..'9')+ ;
 FLOATVAL  : INTVAL '.' INTVAL ;
 BOOLVAL   : ('true' | 'false') ;  
-CHARVAL   : '\'' ('a'..'z'|'A'..'Z') '\'';  
+CHARVAL   :  '\'' ( ESC_SEQ | ~('\\'|'\'') ) '\'' ;
 ID        : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')* ;
 
 
