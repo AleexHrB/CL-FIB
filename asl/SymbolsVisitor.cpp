@@ -75,7 +75,6 @@ antlrcpp::Any SymbolsVisitor::visitProgram(AslParser::ProgramContext *ctx) {
 }
 
 antlrcpp::Any SymbolsVisitor::visitFunction(AslParser::FunctionContext *ctx) {
-  DEBUG_ENTER();
   std::string funcName = ctx->ID()->getText();
   SymTable::ScopeId sc = Symbols.pushNewScope(funcName);
   putScopeDecor(ctx, sc);

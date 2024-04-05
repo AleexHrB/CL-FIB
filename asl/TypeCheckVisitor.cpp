@@ -1,5 +1,4 @@
 //////////////////////////////////////////////////////////////////////
-//
 //    TypeCheckVisitor - Walk the parser tree to do the semantic
 //                       typecheck for the Asl programming language
 //
@@ -165,11 +164,10 @@ antlrcpp::Any TypeCheckVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
   else {
       const std::vector<TypesMgr::TypeId>& fuctionParams = Types.getFuncParamsTypes(t1);
       if (fuctionParams.size() != ctx -> expr().size()) Errors.numberOfParameters(ctx);
-      //unsigned int min = ctx -> expr().size() < fuctionParams.size() ? ctx -> expr().size() : fuctionParams.size();
       for (unsigned int i = 0; i < ctx -> expr().size(); ++i) {
           visit(ctx->expr(i));
           TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-          if (i < fuctionParams.size() and not canCastType(tParam, fuctionParams[i])) {
+          if (i < fuctionParams.size() and not Types.copyableTypes(fuctionParams[i], tParam)) {
               Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
           }
       }
@@ -398,9 +396,15 @@ antlrcpp::Any TypeCheckVisitor::visitReturnStmt(AslParser::ReturnStmtContext *ct
     //std::cout << t << std::endl;
     //std::cout << getCurrentFunctionTy() << std::endl;
 
-    if ((not Types.isFloatTy(getCurrentFunctionTy()) and not Types.equalTypes(t, getCurrentFunctionTy())) or ((Types.isFloatTy(getCurrentFunctionTy()) and not Types.isNumericTy(t))) ) {
-        Errors.incompatibleReturn(ctx->RETURN());
+    TypesMgr::TypeId tFunc = getCurrentFunctionTy();
+
+    if (not Types.isErrorTy(tFunc) and not Types.copyableTypes(tFunc,t)) {
+        Errors.incompatibleReturn(ctx -> RETURN());
     }
+    
+    //if ((not Types.isFloatTy(getCurrentFunctionTy()) and not Types.equalTypes(t, getCurrentFunctionTy())) or ((Types.isFloatTy(getCurrentFunctionTy()) and not Types.isNumericTy(t))) ) {
+    //    Errors.incompatibleReturn(ctx->RETURN());
+    //}
 
     DEBUG_EXIT();
     return 0;
@@ -451,10 +455,12 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprC
 antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     DEBUG_ENTER();
 
+    //for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
+    //    visit(ctx->expr(i)); 
+    //}
+    
     visit(ctx -> ident());
-    for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
-        visit(ctx->expr(i)); 
-    }
+    for (auto& a : ctx -> expr()) visit(a);
 
     TypesMgr::TypeId t = getTypeDecor(ctx -> ident());
     if (not Types.isErrorTy(t) and not Types.isFunctionTy(t)) {
@@ -477,7 +483,7 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
             unsigned int min = ctx -> expr().size() < functionParams.size() ? ctx -> expr().size() : functionParams.size();
             for (unsigned int i = 0; i < min; ++i) {
                 TypesMgr::TypeId tParam = getTypeDecor(ctx->expr(i));
-                if (not Types.isErrorTy(tParam) and not canCastType(tParam, functionParams[i])) {
+                if (not Types.isErrorTy(tParam) and not Types.copyableTypes(functionParams[i], tParam)) {
                     Errors.incompatibleParameter(ctx->expr(i), i+1, ctx);
                 }
             }
@@ -485,9 +491,11 @@ antlrcpp::Any TypeCheckVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
         putTypeDecor(ctx, tRet);
     }
     //t es un error
+
     else {
         putTypeDecor(ctx, t);
     }
+
     putIsLValueDecor(ctx, false);
 
     DEBUG_EXIT();
@@ -516,11 +524,4 @@ void TypeCheckVisitor::putTypeDecor(antlr4::ParserRuleContext *ctx, TypesMgr::Ty
 }
 void TypeCheckVisitor::putIsLValueDecor(antlr4::ParserRuleContext *ctx, bool b) {
   Decorations.putIsLValue(ctx, b);
-}
-
-
-//Cast t1 en t2
-inline bool TypeCheckVisitor::canCastType(TypesMgr::TypeId t1, TypesMgr::TypeId t2) {
-
-    return (not Types.isFloatTy(t2) and Types.equalTypes(t2, t1)) or ((Types.isFloatTy(t2) and Types.isNumericTy(t1)));
 }
