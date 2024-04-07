@@ -412,13 +412,13 @@ antlrcpp::Any TypeCheckVisitor::visitReturnStmt(AslParser::ReturnStmtContext *ct
 
 antlrcpp::Any TypeCheckVisitor::visitArrayAccessLExpr(AslParser::ArrayAccessLExprContext *ctx) {
     DEBUG_ENTER();
-    visit(ctx -> expr());
-    TypesMgr::TypeId tIndx = getTypeDecor(ctx->expr());
+    visit(ctx -> expr(1));
+    TypesMgr::TypeId tIndx = getTypeDecor(ctx->expr(1));
     if ((not Types.isErrorTy(tIndx)) and (not Types.isIntegerTy(tIndx))) 
-        Errors.nonIntegerIndexInArrayAccess(ctx -> expr());
+        Errors.nonIntegerIndexInArrayAccess(ctx -> expr(1));
 
-    visit(ctx -> ident());
-    TypesMgr::TypeId tArray = getTypeDecor(ctx->ident());
+    visit(ctx -> expr(0));
+    TypesMgr::TypeId tArray = getTypeDecor(ctx->expr(0));
 
     if ((not Types.isErrorTy(tArray)) and (not Types.isArrayTy(tArray))) 
         Errors.nonArrayInArrayAccess(ctx);
@@ -432,22 +432,20 @@ antlrcpp::Any TypeCheckVisitor::visitArrayAccessLExpr(AslParser::ArrayAccessLExp
 
 antlrcpp::Any TypeCheckVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprContext *ctx) {
     DEBUG_ENTER();
-    visit(ctx -> expr());
-    TypesMgr::TypeId t1 = getTypeDecor(ctx->expr());
+    visit(ctx -> expr(1));
+    TypesMgr::TypeId tIndx = getTypeDecor(ctx->expr(1));
+    if ((not Types.isErrorTy(tIndx)) and (not Types.isIntegerTy(tIndx))) 
+        Errors.nonIntegerIndexInArrayAccess(ctx -> expr(1));
 
-    if ((not Types.isErrorTy(t1)) and (not Types.isIntegerTy(t1))) 
-        Errors.nonIntegerIndexInArrayAccess(ctx -> expr());
+    visit(ctx -> expr(0));
+    TypesMgr::TypeId tArray = getTypeDecor(ctx->expr(0));
 
-    visit(ctx -> ident());
-    TypesMgr::TypeId t2 = getTypeDecor(ctx->ident());
-
-    if ((not Types.isErrorTy(t2)) and (not Types.isArrayTy(t2))) 
+    if ((not Types.isErrorTy(tArray)) and (not Types.isArrayTy(tArray))) 
         Errors.nonArrayInArrayAccess(ctx);
 
-    TypesMgr::TypeId t3 = Types.isArrayTy(t2) ? Types.getArrayElemType(t2) : Types.createErrorTy();
-    putTypeDecor(ctx, t3);
+    TypesMgr::TypeId tArrayValue = Types.isArrayTy(tArray) ? Types.getArrayElemType(tArray) : Types.createErrorTy();
+    putTypeDecor(ctx, tArrayValue);
     putIsLValueDecor(ctx, true);
-
     DEBUG_EXIT();
     return 0;
 }
