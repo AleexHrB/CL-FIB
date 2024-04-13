@@ -146,19 +146,19 @@ int main(int argc, const char* argv[]) {
 
   // uncomment the following lines to generate LLVM code
   // and write it to a .ll file
-  std::string llvmStr = mycode.dumpLLVM(types, symbols);
-  std::string llvmFileName;
-  if (argc == 2) { // read from <file>
-    std::string inputFileName = std::string(argv[1]);
-    std::size_t slashPos = inputFileName.rfind("/");
-    std::size_t dotPos   = inputFileName.rfind(".");
-    llvmFileName = inputFileName.substr(slashPos+1, dotPos-slashPos-1) + ".ll";
-  }
-  else {           // read fron std::cin
-    llvmFileName = "output.ll";
-  }
-  std::ofstream myLLVMFile(llvmFileName, std::ofstream::out);
-  myLLVMFile << llvmStr << std::endl;
+  //std::string llvmStr = mycode.dumpLLVM(types, symbols);
+  //std::string llvmFileName;
+  //if (argc == 2) { // read from <file>
+  //  std::string inputFileName = std::string(argv[1]);
+  //  std::size_t slashPos = inputFileName.rfind("/");
+  //  std::size_t dotPos   = inputFileName.rfind(".");
+  //  llvmFileName = inputFileName.substr(slashPos+1, dotPos-slashPos-1) + ".ll";
+  //}
+  //else {           // read fron std::cin
+  //  llvmFileName = "output.ll";
+  //}
+  //std::ofstream myLLVMFile(llvmFileName, std::ofstream::out);
+  //myLLVMFile << llvmStr << std::endl;
 
   return EXIT_SUCCESS;
 }
