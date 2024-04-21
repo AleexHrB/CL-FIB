@@ -64,6 +64,11 @@ public:
 
   // Methods to visit each kind of node:
   antlrcpp::Any visitProgram(AslParser::ProgramContext *ctx);
+  antlrcpp::Any visitArrayAccessLExpr(AslParser::ArrayAccessLExprContext *ctx);
+  antlrcpp::Any visitArrayAccessExpr(AslParser::ArrayAccessExprContext *ctx);
+  antlrcpp::Any visitProcCall(AslParser::ProcCallContext *ctx);
+  antlrcpp::Any visitFuncExpr(AslParser::FuncExprContext *ctx);
+  antlrcpp::Any visitReturnStmt(AslParser::ReturnStmtContext *ctx);
   antlrcpp::Any visitFunction(AslParser::FunctionContext *ctx);
   antlrcpp::Any visitDeclarations(AslParser::DeclarationsContext *ctx);
   antlrcpp::Any visitVariable_decl(AslParser::Variable_declContext *ctx);
@@ -71,7 +76,6 @@ public:
   antlrcpp::Any visitStatements(AslParser::StatementsContext *ctx);
   antlrcpp::Any visitAssignStmt(AslParser::AssignStmtContext *ctx);
   antlrcpp::Any visitIfStmt(AslParser::IfStmtContext *ctx);
-  antlrcpp::Any visitProcCall(AslParser::ProcCallContext *ctx);
   antlrcpp::Any visitReadStmt(AslParser::ReadStmtContext *ctx);
   antlrcpp::Any visitWriteExpr(AslParser::WriteExprContext *ctx);
   antlrcpp::Any visitWriteString(AslParser::WriteStringContext *ctx);
@@ -85,6 +89,8 @@ public:
   antlrcpp::Any visitUnaryLogical(AslParser::UnaryLogicalContext *ctx);
   antlrcpp::Any visitUnaryArithmetic(AslParser::UnaryArithmeticContext *ctx);
   antlrcpp::Any visitLogical(AslParser::LogicalContext *ctx);
+  antlrcpp::Any visitWhileStmt(AslParser::WhileStmtContext *ctx);
+  antlrcpp::Any visitParameters(AslParser::ParametersContext *ctx);
 
 private:
 
@@ -125,7 +131,8 @@ private:
                 instructionList && code);
 
     // Attributes (publics):
-    //   - the address that will hold the value of an expression
+    // antlrcpp::Any visitArrayAccessLExpr
+    //   - the address that will hold the value of an expression(AslParser::ArrayAccessLExprContext *ctx);
     std::string addr;
     //   - the offset applied to the address (for array access)
     std::string offs;
