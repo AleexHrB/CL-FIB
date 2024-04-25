@@ -39,7 +39,7 @@
 #include <cstddef>    // std::size_t
 
 // uncomment the following line to enable debugging messages with DEBUG*
-#define DEBUG_BUILD
+// #define DEBUG_BUILD
 #include "../common/debug.h"
 
 // using namespace std;
@@ -130,6 +130,7 @@ antlrcpp::Any CodeGenVisitor::visitParameters(AslParser::ParametersContext *ctx)
   for (size_t i = 0; i < ctx->type().size(); ++i) {
       TypesMgr::TypeId t = getTypeDecor(ctx->type(i));
       std::size_t size = Types.getSizeOfType(t);
+      //std::cout << "Param " << ctx->ID(i)->getText() << " type " << Types.to_string(t) << std::endl;
       params.push_back({var{ctx->ID(i)->getText(), Types.to_string(t), size}, t});
   }
   DEBUG_EXIT();
@@ -141,6 +142,27 @@ antlrcpp::Any CodeGenVisitor::visitVariable_decl(AslParser::Variable_declContext
   TypesMgr::TypeId   t1 = getTypeDecor(ctx->type());
   std::size_t      size = Types.getSizeOfType(t1);
   std::vector<var> lvars;
+
+  /**
+   ----------------------------------
+   * MAL:
+    vars
+      x integer
+      y boolean
+      z array<10,integer> 10
+    endvars
+
+    * BIEN:
+    vars
+      x integer
+      y boolean
+      z integer 10
+    endvars
+  */
+  if (Types.isArrayTy(t1))
+    t1 = Types.getArrayElemType(t1);
+  // ----------------------------------
+
   for (auto& a : ctx -> ID()) lvars.push_back(var{a ->getText(), Types.to_string(t1), size}); 
   DEBUG_EXIT();
   return lvars;
@@ -519,12 +541,24 @@ antlrcpp::Any CodeGenVisitor::visitReturnStmt(AslParser::ReturnStmtContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
     DEBUG_ENTER();
-    instructionList && code = instruction::PUSH();
+    instructionList && code = instruction::PUSH(); // push _result
 
-    for (auto& a : ctx -> expr()) {
-        CodeAttribs     && codAt1 = visit(a);
+    TypesMgr::TypeId tFunc = getTypeDecor(ctx -> ident());
+    const std::vector<TypesMgr::TypeId>& functionParams = Types.getFuncParamsTypes(tFunc);
+
+    for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
+        CodeAttribs     && codAt1 = visit(ctx->expr(i));
         std::string         addr1 = codAt1.addr;
         code = code || codAt1.code;
+
+        // type coertion: int -> float
+        TypesMgr::TypeId tExpr = getTypeDecor(ctx->expr(i));
+        if (Types.isIntegerTy(tExpr) and Types.isFloatTy(functionParams[i])) {
+          std::string temp = "%"+codeCounters.newTEMP();
+          code = code || instruction::FLOAT(temp, addr1);
+          addr1 = temp;
+        }
+
         code = code || instruction::PUSH(addr1);
     }
 
@@ -576,9 +610,9 @@ antlrcpp::Any CodeGenVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprCon
     
     std::string temp = "%"+codeCounters.newTEMP();
 
-    TypesMgr::TypeId t = getTypeDecor(ctx->expr(0));
-    t = Types.getArrayElemType(t);
-    std::size_t size = Types.getSizeOfType(t);
+    //TypesMgr::TypeId t = getTypeDecor(ctx->expr(0));
+    //t = Types.getArrayElemType(t);
+    //std::size_t size = Types.getSizeOfType(t);
 
     //code = code || instruction::MUL(temp, std::to_string(size), addr2);
     code = code || instruction::LOADX(temp, addr1, addr2);
@@ -601,9 +635,9 @@ antlrcpp::Any CodeGenVisitor::visitArrayAccessLExpr(AslParser::ArrayAccessLExprC
     
     std::string temp = "%"+codeCounters.newTEMP();
 
-    TypesMgr::TypeId t = getTypeDecor(ctx->expr(0));
-    t = Types.getArrayElemType(t);
-    std::size_t size = Types.getSizeOfType(t);
+    //TypesMgr::TypeId t = getTypeDecor(ctx->expr(0));
+    //t = Types.getArrayElemType(t);
+    //std::size_t size = Types.getSizeOfType(t);
     //code = code || instruction::MUL(temp, std::to_string(size), addr2);
 
     CodeAttribs codAts(temp, addr1, code);
