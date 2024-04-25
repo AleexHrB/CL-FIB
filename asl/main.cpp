@@ -144,6 +144,7 @@ int main(int argc, const char* argv[]) {
   // print generated code as output
   std::cout << mycode.dump() << std::endl;
 
+  // Visentada
   // uncomment the following lines to generate LLVM code
   // and write it to a .ll file
   //std::string llvmStr = mycode.dumpLLVM(types, symbols);
