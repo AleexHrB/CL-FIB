@@ -182,7 +182,6 @@ antlrcpp::Any CodeGenVisitor::visitStatements(AslParser::StatementsContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitAssignStmt(AslParser::AssignStmtContext *ctx) {
   DEBUG_ENTER();
-  instructionList code;
   CodeAttribs     && codAtsE1 = visit(ctx->left_expr());
   std::string           addr1 = codAtsE1.addr;
   std::string           offs1 = codAtsE1.offs;
@@ -195,14 +194,19 @@ antlrcpp::Any CodeGenVisitor::visitAssignStmt(AslParser::AssignStmtContext *ctx)
   instructionList &     code2 = codAtsE2.code;
   TypesMgr::TypeId tid2 = getTypeDecor(ctx->expr());
 
+  instructionList code = code1 || code2;
+
+  // type coertion int->float
   if (Types.isFloatTy(tid1) and Types.isIntegerTy(tid2)) {
       std::string temp = "%"+codeCounters.newTEMP();
       code = code || instruction::FLOAT(temp, addr2);
       addr2 = temp;
   }
   
-  if (offs1 == "") code = code1 || code2 || code || instruction::LOAD(addr1, addr2);
-  else code = code1 || code2 || code || instruction::XLOAD(addr1, offs1, addr2);
+  // load
+  if (offs1 == "") code = code || instruction::LOAD(addr1, addr2);
+  else code = code || instruction::XLOAD(addr1, offs1, addr2);
+  
   DEBUG_EXIT();
   return code;
 }
