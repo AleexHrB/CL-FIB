@@ -101,7 +101,7 @@ antlrcpp::Any CodeGenVisitor::visitFunction(AslParser::FunctionContext *ctx) {
   if (ctx -> parameters()) {
       std::vector<std::pair<var, TypesMgr::TypeId>> && params = visit(ctx->parameters());
       for (auto & onevar : params) {
-          subr.add_param(onevar.first.name, Types.to_string(onevar.second), Types.isArrayTy(onevar.second));
+          subr.add_param(onevar.first.name, onevar.first.type, Types.isArrayTy(onevar.second));
       }
   }
 
@@ -130,8 +130,10 @@ antlrcpp::Any CodeGenVisitor::visitParameters(AslParser::ParametersContext *ctx)
   for (size_t i = 0; i < ctx->type().size(); ++i) {
       TypesMgr::TypeId t = getTypeDecor(ctx->type(i));
       std::size_t size = Types.getSizeOfType(t);
-      //std::cout << "Param " << ctx->ID(i)->getText() << " type " << Types.to_string(t) << std::endl;
-      params.push_back({var{ctx->ID(i)->getText(), Types.to_string(t), size}, t});
+      std::string s = Types.to_string(t);
+
+      if (Types.isArrayTy(t)) s = Types.to_string(Types.getArrayElemType(t));
+      params.push_back({var{ctx->ID(i)->getText(), s , size}, t});
   }
   DEBUG_EXIT();
   return params;
@@ -629,6 +631,8 @@ antlrcpp::Any CodeGenVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
     TypesMgr::TypeId tFunc = getTypeDecor(ctx -> ident());
     const std::vector<TypesMgr::TypeId>& functionParams = Types.getFuncParamsTypes(tFunc);
 
+    if (not Types.isVoidFunction(tFunc)) code = code || instruction::PUSH();
+
     for (unsigned int i = 0; i < ctx->expr().size(); ++i) {
         CodeAttribs     && codAt1 = visit(ctx->expr(i));
         std::string         addr1 = codAt1.addr;
@@ -636,6 +640,7 @@ antlrcpp::Any CodeGenVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
 
         // type coertion: int -> float
         TypesMgr::TypeId tExpr = getTypeDecor(ctx->expr(i));
+
         if (Types.isIntegerTy(tExpr) and Types.isFloatTy(functionParams[i])) {
           std::string temp = "%"+codeCounters.newTEMP();
           code = code || instruction::FLOAT(temp, addr1);
@@ -647,7 +652,14 @@ antlrcpp::Any CodeGenVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
 
     code = code || instruction::CALL(ctx -> ident() -> getText());
 
-    for (unsigned int i = 0; i < ctx -> expr().size(); ++i) code = code || instruction::POP();
+    for (unsigned int i = 0; i < ctx -> expr().size(); ++i) {
+        TypesMgr::TypeId t = getTypeDecor(ctx -> expr(i));
+
+        if (Types.isArrayTy(t)) code = code || instruction::POP();
+        else code = code || instruction::POP();
+    }
+
+    if (not Types.isVoidFunction(tFunc)) code = code || instruction::POP();
 
     //std::string temp = "%"+codeCounters.newTEMP();
     //code = code || instruction::POP(temp);
