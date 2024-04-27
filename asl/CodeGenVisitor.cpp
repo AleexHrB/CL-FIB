@@ -605,12 +605,19 @@ antlrcpp::Any CodeGenVisitor::visitFuncExpr(AslParser::FuncExprContext *ctx) {
           addr1 = temp;
         }
 
+        else if (Types.isArrayTy(tExpr) and not Symbols.isParameterClass(ctx -> expr(i) -> getText())) {
+          std::string temp = "%"+codeCounters.newTEMP();
+          code = code || instruction::ALOAD(temp, addr1);
+          addr1 = temp;
+        }
+
         code = code || instruction::PUSH(addr1);
     }
 
     code = code || instruction::CALL(ctx -> ident() -> getText());
 
     for (unsigned int i = 0; i < ctx -> expr().size(); ++i) code = code || instruction::POP();
+    
 
     std::string temp = "%"+codeCounters.newTEMP();
 
@@ -647,17 +654,18 @@ antlrcpp::Any CodeGenVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
           addr1 = temp;
         }
 
+        else if (Types.isArrayTy(tExpr) and not Symbols.isParameterClass(ctx -> expr(i) -> getText())) {
+          std::string temp = "%"+codeCounters.newTEMP();
+          code = code || instruction::ALOAD(temp, addr1);
+          addr1 = temp;
+        }
+
         code = code || instruction::PUSH(addr1);
     }
 
     code = code || instruction::CALL(ctx -> ident() -> getText());
 
-    for (unsigned int i = 0; i < ctx -> expr().size(); ++i) {
-        TypesMgr::TypeId t = getTypeDecor(ctx -> expr(i));
-
-        if (Types.isArrayTy(t)) code = code || instruction::POP();
-        else code = code || instruction::POP();
-    }
+    for (unsigned int i = 0; i < ctx -> expr().size(); ++i) code = code || instruction::POP();
 
     if (not Types.isVoidFunction(tFunc)) code = code || instruction::POP();
 
@@ -669,6 +677,8 @@ antlrcpp::Any CodeGenVisitor::visitProcCall(AslParser::ProcCallContext *ctx) {
     return code;
 }
 
+//expr[expr]
+//m[0][0]
 antlrcpp::Any CodeGenVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprContext *ctx) {
     DEBUG_ENTER();
     CodeAttribs     && codAt1 = visit(ctx -> expr(0));
@@ -686,6 +696,13 @@ antlrcpp::Any CodeGenVisitor::visitArrayAccessExpr(AslParser::ArrayAccessExprCon
     //std::size_t size = Types.getSizeOfType(t);
 
     //code = code || instruction::MUL(temp, std::to_string(size), addr2);
+
+    if (Symbols.isParameterClass(ctx -> expr(0) -> getText())) {
+        std::string temp2 = "%"+codeCounters.newTEMP();
+        code = code || instruction::LOAD(temp2, addr1);
+        addr1 = temp2;
+    }
+
     code = code || instruction::LOADX(temp, addr1, addr2);
 
     CodeAttribs codAts(temp, "", code);
@@ -710,6 +727,11 @@ antlrcpp::Any CodeGenVisitor::visitArrayAccessLExpr(AslParser::ArrayAccessLExprC
     //t = Types.getArrayElemType(t);
     //std::size_t size = Types.getSizeOfType(t);
     //code = code || instruction::MUL(temp, std::to_string(size), addr2);
+    if (Symbols.isParameterClass(ctx -> expr(0) -> getText())) {
+        std::string temp2 = "%"+codeCounters.newTEMP();
+        code = code || instruction::LOAD(temp2, addr1);
+        addr1 = temp2;
+    }
 
     CodeAttribs codAts(addr1, addr2, code);
 
