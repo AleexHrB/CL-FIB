@@ -94,9 +94,7 @@ antlrcpp::Any CodeGenVisitor::visitFunction(AslParser::FunctionContext *ctx) {
     subr.add_var(onevar);
   }
 
-
-
-  if (not Types.isVoidTy(t1)) subr.add_param("_result", Types.to_string(t1), Types.isArrayTy(t1)); 
+  if (not Types.isVoidTy(t1)) subr.add_param("_result", Types.to_string_basic(t1), Types.isArrayTy(t1)); 
 
   if (ctx -> parameters()) {
       std::vector<std::pair<var, TypesMgr::TypeId>> && params = visit(ctx->parameters());
@@ -130,9 +128,7 @@ antlrcpp::Any CodeGenVisitor::visitParameters(AslParser::ParametersContext *ctx)
   for (size_t i = 0; i < ctx->type().size(); ++i) {
       TypesMgr::TypeId t = getTypeDecor(ctx->type(i));
       std::size_t size = Types.getSizeOfType(t);
-      std::string s = Types.to_string(t);
-
-      if (Types.isArrayTy(t)) s = Types.to_string(Types.getArrayElemType(t));
+      std::string s = Types.to_string_basic(t);
       params.push_back({var{ctx->ID(i)->getText(), s , size}, t});
   }
   DEBUG_EXIT();
@@ -161,11 +157,11 @@ antlrcpp::Any CodeGenVisitor::visitVariable_decl(AslParser::Variable_declContext
       z integer 10
     endvars
   */
-  if (Types.isArrayTy(t1))
-    t1 = Types.getArrayElemType(t1);
+  //if (Types.isArrayTy(t1))
+  //  t1 = Types.getArrayElemType(t1);
   // ----------------------------------
 
-  for (auto& a : ctx -> ID()) lvars.push_back(var{a ->getText(), Types.to_string(t1), size}); 
+  for (auto& a : ctx -> ID()) lvars.push_back(var{a ->getText(), Types.to_string_basic(t1), size}); 
   DEBUG_EXIT();
   return lvars;
 }
