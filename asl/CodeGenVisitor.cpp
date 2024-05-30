@@ -791,3 +791,24 @@ antlrcpp::Any CodeGenVisitor::visitArrayAccessLExpr(AslParser::ArrayAccessLExprC
     DEBUG_EXIT();
     return codAts;
 }
+
+/*
+   std::string count = "%"+codeCounters.newTEMP();
+   std::string lim = "%"+codeCounters.newTEMP();
+   std::string one = "%"+codeCounters.newTEMP();
+   std::string countWhile = codeCounters.newLabelWHILE();
+   std::string leq = "%"+codeCounters.newTEMP();
+   std::string initWhile = "while" + countWhile;
+   std::string endWhile = "endWhile" + countWhile;
+
+   code = code || instruction::ILOAD(one, "1");
+   code = code || instruction::ILOAD(count, "0");
+   code = code || instruction::ILOAD(lim, LO_QUE_TOQUE);
+   code = code || instruction::LABEL(initWhile);
+   code = code || instruction::LT(leq, count, lim);
+   code = code || instruction::FJUMP(leq, endWhile);
+   //Codigo de dentro
+   code = code || instruction::ADD(count, count, one);
+   code = code || instruction::UJUMP(initWhile);
+   code = code || instruction::LABEL(endWhile);
+*/
